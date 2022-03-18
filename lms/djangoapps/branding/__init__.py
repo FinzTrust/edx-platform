@@ -35,12 +35,18 @@ def get_visible_courses(org=None, filter_=None):
     if org:
         # Check the current site's orgs to make sure the org's courses should be displayed
         if not current_site_orgs or org in current_site_orgs:
-            courses = CourseOverview.get_all_courses(orgs=[org], filter_=filter_)
+            public_courses = CourseOverview.get_all_courses(orgs=[org], filter_={'privacy': 'PUBLIC'})
+            private_courses = CourseOverview.get_all_courses(orgs=[org], filter_=filter_)
+            courses = public_courses | private_courses # Union QuerySet
     elif current_site_orgs:
         # Only display courses that should be displayed on this site
-        courses = CourseOverview.get_all_courses(orgs=current_site_orgs, filter_=filter_)
+        public_courses = CourseOverview.get_all_courses(orgs=current_site_orgs, filter_={'privacy': 'PUBLIC'})
+        private_courses = CourseOverview.get_all_courses(orgs=current_site_orgs, filter_=filter_)
+        courses = public_courses | private_courses # Union QuerySet
     else:
-        courses = CourseOverview.get_all_courses(filter_=filter_)
+        public_courses = CourseOverview.get_all_courses(filter_={'privacy': 'PUBLIC'})
+        private_courses = CourseOverview.get_all_courses(filter_=filter_)
+        courses = public_courses | private_courses # Union QuerySet
 
     courses = courses.order_by('id')
 
