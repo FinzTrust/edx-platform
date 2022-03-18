@@ -33,6 +33,7 @@ from xmodule.course_module import DEFAULT_START_DATE, CourseBlock  # lint-amnest
 from xmodule.error_module import ErrorBlock  # lint-amnesty, pylint: disable=wrong-import-order
 from xmodule.modulestore.django import modulestore  # lint-amnesty, pylint: disable=wrong-import-order
 from xmodule.tabs import CourseTab  # lint-amnesty, pylint: disable=wrong-import-order
+from openedx.features.branch.models import Branch  # Customized module
 
 log = logging.getLogger(__name__)
 
@@ -71,7 +72,7 @@ class CourseOverview(TimeStampedModel):
     # Course identification
     id = CourseKeyField(db_index=True, primary_key=True, max_length=255)
     # Newly added
-    branch = models.ForeignKey('branch.Branch', null=True, blank=True, on_delete=models.PROTECT)
+    branch = models.ForeignKey(Branch, null=True, blank=True, on_delete=models.PROTECT)
     privacy = models.CharField(max_length=9, choices=(('PRIVATE', 'Private'),('PUBLIC', 'Public')), default='PRIVATE')
     # End of additional field
     _location = UsageKeyField(max_length=255)
@@ -210,7 +211,8 @@ class CourseOverview(TimeStampedModel):
 
         course_overview.version = cls.VERSION
         course_overview.id = course.id
-        course_overview.branch_id = branch.id if branch else None # This is to set default branch when user create course in studio. Newly customized by FinzTrust.
+        course_overview.branch_id = course.branch_id
+        course_overview.privacy = course.privacy
         course_overview._location = course.location  # lint-amnesty, pylint: disable=protected-access
         course_overview.org = course.location.org
         course_overview.display_name = display_name

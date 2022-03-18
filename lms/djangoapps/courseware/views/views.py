@@ -142,13 +142,24 @@ from openedx.features.course_experience.views.course_dates import CourseDatesFra
 from openedx.features.course_experience.waffle import ENABLE_COURSE_ABOUT_SIDEBAR_HTML
 from openedx.features.course_experience.waffle import waffle as course_experience_waffle
 from openedx.features.enterprise_support.api import data_sharing_consent_required
+from common.djangoapps.student.models import CourseEnrollment, UserTestGroup, UserProfile
+from common.djangoapps.util.cache import cache, cache_if_anonymous
+from common.djangoapps.util.course import course_location_from_key
+from common.djangoapps.util.db import outer_atomic
+from common.djangoapps.util.milestones_helpers import get_prerequisite_courses_display
+from common.djangoapps.util.views import ensure_valid_course_key, ensure_valid_usage_key
+from xmodule.course_module import COURSE_VISIBILITY_PUBLIC, COURSE_VISIBILITY_PUBLIC_OUTLINE
+from xmodule.modulestore.django import modulestore
+from xmodule.modulestore.exceptions import ItemNotFoundError, NoPathToItem
+from xmodule.tabs import CourseTabList
+from xmodule.x_module import STUDENT_VIEW
 
 from ..context_processor import user_timezone_locale_prefs
 from ..entrance_exams import user_can_skip_entrance_exam
 from ..module_render import get_module, get_module_by_usage_id, get_module_for_descriptor
 from ..tabs import _get_dynamic_tabs
 from ..toggles import COURSEWARE_OPTIMIZED_RENDER_XBLOCK
-from openedx.features.branch.utils import get_user_branch_id
+from openedx.features.branch.models import Branch
 
 
 log = logging.getLogger("edx.courseware")
@@ -274,6 +285,30 @@ def user_groups(user):
     return group_names
 
 
+def get_user_branch_id(user):
+    """
+    This is for getting login user branch id.
+    """
+    if not user.is_authenticated:
+        return []
+
+    # TODO: Rewrite in Django
+    key = f'user_branch_id_{user.id}'
+    cache_expiration = 60 * 60  # one hour
+
+    # Kill caching on dev machines -- we switch groups a lot
+    branch_id = cache.get(key)
+    if settings.DEBUG:
+        branch_id = None
+
+    if branch_id is None:
+        user_profile = UserProfile.objects.get(user_id=user.id)
+        branch_id = getattr(user_profile, 'branch_id')
+        cache.set(key, branch_id, cache_expiration)
+
+    return branch_id
+
+
 @ensure_csrf_cookie
 @cache_if_anonymous()
 def courses(request):
@@ -282,9 +317,9 @@ def courses(request):
     """
     courses_list = []
     course_discovery_meanings = getattr(settings, 'COURSE_DISCOVERY_MEANINGS', {})
+    branch_id = get_user_branch_id(request.user)
     if not settings.FEATURES.get('ENABLE_COURSE_DISCOVERY'):
-        # If user does not have link to any branch, don't pass filter_ argument
-        courses_list = get_courses(request.user, filter_=  { 'branch_id': branch_id } if branch_id else None)
+        courses_list = get_courses(request.user, filter_=  { 'branch_id': branch_id })
 
         if configuration_helpers.get_value("ENABLE_COURSE_SORTING_BY_START_DATE",
                                            settings.FEATURES["ENABLE_COURSE_SORTING_BY_START_DATE"]):
