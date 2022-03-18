@@ -96,6 +96,7 @@ from openedx.core.djangoapps.site_configuration import helpers as configuration_
 from openedx.core.djangoapps.xmodule_django.models import NoneToEmptyManager
 from openedx.core.djangolib.model_mixins import DeletableByUserValue
 from openedx.core.toggles import ENTRANCE_EXAMS
+from openedx.features.branch.models import Branch
 
 log = logging.getLogger(__name__)
 AUDIT_LOG = logging.getLogger("audit")
@@ -506,6 +507,8 @@ class UserProfile(models.Model):
     # CRITICAL TODO/SECURITY
     # Sanitize all fields.
     # This is not visible to other users, but could introduce holes later
+    # Add branch field to link student to specific branch
+    branch = models.ForeignKey(Branch, db_index=True, on_delete=models.PROTECT, blank=True, null=True)
     user = models.OneToOneField(User, unique=True, db_index=True, related_name='profile', on_delete=models.CASCADE)
     name = models.CharField(blank=True, max_length=255, db_index=True)
 

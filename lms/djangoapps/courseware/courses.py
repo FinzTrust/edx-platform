@@ -75,7 +75,6 @@ _Assignment = namedtuple(
                    'assignment_type', 'extra_info', 'first_component_block_id']
 )
 
-
 def get_course(course_id, depth=0):
     """
     Given a course id, return the corresponding course descriptor.
@@ -86,6 +85,7 @@ def get_course(course_id, depth=0):
     depth: The number of levels of children for the modulestore to cache.
     None means infinite depth.  Default is to fetch no children.
     """
+    print('===========>')
     course = modulestore().get_course(course_id, depth=depth)
     if course is None:
         raise CourseRunNotFound(course_key=course_id)
