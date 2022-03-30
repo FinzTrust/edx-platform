@@ -3,6 +3,7 @@ Declaration of CourseOverview model
 """
 
 
+from abc import abstractclassmethod
 import json
 import logging
 from urllib.parse import urlparse, urlunparse
@@ -74,7 +75,7 @@ class CourseOverview(TimeStampedModel):
     # Course identification
     id = CourseKeyField(db_index=True, primary_key=True, max_length=255)
     # Newly added
-    branch = models.ForeignKey(Branch, null=True, blank=True, on_delete=models.PROTECT)
+    branch = models.ForeignKey('branch.Branch', null=True, blank=True, on_delete=models.PROTECT)
     privacy = models.CharField(max_length=9, choices=(('PRIVATE', 'Private'),('PUBLIC', 'Public')), default='PRIVATE')
     # End of additional field
     _location = UsageKeyField(max_length=255)
