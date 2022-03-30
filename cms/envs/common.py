@@ -1917,6 +1917,9 @@ OPTIONAL_APPS = (
     ('integrated_channels.blackboard', None),
     ('integrated_channels.canvas', None),
     ('integrated_channels.moodle', None),
+
+    # Customized App of FinzTrust
+    ('openedx.features.branch', None)
 )
 
 
