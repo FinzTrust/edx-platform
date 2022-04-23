@@ -74,7 +74,7 @@ class CourseOverview(TimeStampedModel):
 
     # Course identification
     id = CourseKeyField(db_index=True, primary_key=True, max_length=255)
-    # Newly added
+    # Newly added by FinzTrust for Course Management Customization
     branch = models.ForeignKey('branch.Branch', null=True, blank=True, on_delete=models.PROTECT)
     privacy = models.CharField(max_length=9, choices=(('PRIVATE', 'Private'),('PUBLIC', 'Public')), default='PRIVATE')
     # End of additional field
@@ -204,8 +204,8 @@ class CourseOverview(TimeStampedModel):
 
         course_overview.version = cls.VERSION
         course_overview.id = course.id
-        course_overview.branch_id = course.branch_id
-        course_overview.privacy = course.privacy
+        # This is for future use, if there are any customization on Studio > Course Creation > Front-End
+        course_overview.branch_id = None    # This is for future if we want to set default branch when user create course in studio
         course_overview._location = course.location  # lint-amnesty, pylint: disable=protected-access
         course_overview.org = course.location.org
         course_overview.display_name = display_name
