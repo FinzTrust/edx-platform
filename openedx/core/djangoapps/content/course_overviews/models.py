@@ -70,7 +70,7 @@ class CourseOverview(TimeStampedModel):
 
     # Course identification
     id = CourseKeyField(db_index=True, primary_key=True, max_length=255)
-    # Newly added
+    # Newly added by FinzTrust for Course Management Customization
     branch = models.ForeignKey('branch.Branch', null=True, blank=True, on_delete=models.PROTECT)
     privacy = models.CharField(max_length=9, choices=(('PRIVATE', 'Private'),('PUBLIC', 'Public')), default='PRIVATE')
     # End of additional field
@@ -206,7 +206,7 @@ class CourseOverview(TimeStampedModel):
 
         # Newly customized from FinzTrust
         branch = Branch.objects.filter(short_name=course.location.org).first()
-        # End of new code block
+        # End of new customized code block
 
         course_overview.version = cls.VERSION
         course_overview.id = course.id
