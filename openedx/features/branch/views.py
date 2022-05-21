@@ -1,3 +1,7 @@
-from django.shortcuts import render
+from django.http import JsonResponse
+from .models import Branch
 
-# Create your views here.
+def get_all_branch(request):
+    data = list(Branch.objects.values())
+    return JsonResponse(data, safe = False)
+
