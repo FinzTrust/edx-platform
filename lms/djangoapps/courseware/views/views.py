@@ -148,6 +148,8 @@ from ..entrance_exams import user_can_skip_entrance_exam
 from ..module_render import get_module, get_module_by_usage_id, get_module_for_descriptor
 from ..tabs import _get_dynamic_tabs
 from ..toggles import COURSEWARE_OPTIMIZED_RENDER_XBLOCK
+from openedx.features.branch.utils import get_user_branch_id
+
 
 log = logging.getLogger("edx.courseware")
 
@@ -281,7 +283,8 @@ def courses(request):
     courses_list = []
     course_discovery_meanings = getattr(settings, 'COURSE_DISCOVERY_MEANINGS', {})
     if not settings.FEATURES.get('ENABLE_COURSE_DISCOVERY'):
-        courses_list = get_courses(request.user)
+        # If user does not have link to any branch, don't pass filter_ argument
+        courses_list = get_courses(request.user, filter_=  { 'branch_id': branch_id } if branch_id else None)
 
         if configuration_helpers.get_value("ENABLE_COURSE_SORTING_BY_START_DATE",
                                            settings.FEATURES["ENABLE_COURSE_SORTING_BY_START_DATE"]):

@@ -66,6 +66,10 @@ from common.djangoapps.util.date_utils import strftime_localized
 from xmodule.modulestore.django import modulestore  # lint-amnesty, pylint: disable=wrong-import-order
 from xmodule.modulestore.exceptions import ItemNotFoundError  # lint-amnesty, pylint: disable=wrong-import-order
 from xmodule.x_module import STUDENT_VIEW  # lint-amnesty, pylint: disable=wrong-import-order
+<<<<<<< HEAD
+=======
+from openedx.features.branch.utils import is_system_admin
+>>>>>>> 02f3d08871 (Update)
 
 log = logging.getLogger(__name__)
 
@@ -724,6 +728,7 @@ def get_courses(user, org=None, filter_=None, permissions=None):
     courses = branding.get_visible_courses(
         org=org,
         filter_=filter_,
+        is_system_admin=is_system_admin(user) or user.is_superuser
     ).prefetch_related(
         'modes',
     ).select_related(
