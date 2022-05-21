@@ -511,6 +511,22 @@ def _accessible_courses_list_from_branch(request):
     return courses_list, []
 
 
+# Newly customized by FinzTrust
+def _accessible_courses_list_from_branch(request):
+    """
+    List all courses available to the logged in user by branch
+    """
+    def filter_ccx(course_access):
+        """ CCXs cannot be edited in Studio and should not be shown in this dashboard """
+        return not isinstance(course_access.id, CCXLocator)
+
+    branch_id = get_user_branch_id(request.user)
+    courses_within_branch = CourseOverview.objects.filter(branch_id=branch_id)
+    courses_list = list(filter(filter_ccx, courses_within_branch))
+
+    return courses_list, []
+
+
 @function_trace('_accessible_libraries_iter')
 def _accessible_libraries_iter(user, org=None):
     """
