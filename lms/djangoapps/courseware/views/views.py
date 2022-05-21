@@ -132,7 +132,7 @@ from openedx.features.enterprise_support.api import data_sharing_consent_require
 from ..module_render import get_module, get_module_by_usage_id, get_module_for_descriptor
 from ..tabs import _get_dynamic_tabs
 from ..toggles import COURSEWARE_OPTIMIZED_RENDER_XBLOCK
-from openedx.features.branch.models import Branch
+from openedx.features.branch.utils import get_user_branch_id
 
 
 log = logging.getLogger("edx.courseware")
@@ -263,30 +263,6 @@ def user_groups(user):
     return group_names
 
 
-def get_user_branch_id(user):
-    """
-    This is for getting login user branch id.
-    """
-    if not user.is_authenticated:
-        return []
-
-    # TODO: Rewrite in Django
-    key = f'user_branch_id_{user.id}'
-    cache_expiration = 60 * 60  # one hour
-
-    # Kill caching on dev machines -- we switch groups a lot
-    branch_id = cache.get(key)
-    if settings.DEBUG:
-        branch_id = None
-
-    if branch_id is None:
-        user_profile = UserProfile.objects.get(user_id=user.id)
-        branch_id = getattr(user_profile, 'branch_id')
-        cache.set(key, branch_id, cache_expiration)
-
-    return branch_id
-
-
 @ensure_csrf_cookie
 @cache_if_anonymous()
 def courses(request):
@@ -297,7 +273,8 @@ def courses(request):
     course_discovery_meanings = getattr(settings, 'COURSE_DISCOVERY_MEANINGS', {})
     branch_id = get_user_branch_id(request.user)
     if not settings.FEATURES.get('ENABLE_COURSE_DISCOVERY'):
-        courses_list = get_courses(request.user, filter_=  { 'branch_id': branch_id })
+        # If user does not have link to any branch, don't pass filter_ argument
+        courses_list = get_courses(request.user, filter_=  { 'branch_id': branch_id } if branch_id else None)
 
         if configuration_helpers.get_value("ENABLE_COURSE_SORTING_BY_START_DATE",
                                            settings.FEATURES["ENABLE_COURSE_SORTING_BY_START_DATE"]):
