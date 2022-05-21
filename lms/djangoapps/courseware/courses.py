@@ -62,9 +62,10 @@ from openedx.features.course_experience.utils import is_block_structure_complete
 from common.djangoapps.static_replace import replace_static_urls
 from lms.djangoapps.survey.utils import SurveyRequiredAccessError, check_survey_required_and_unanswered
 from common.djangoapps.util.date_utils import strftime_localized
-from xmodule.modulestore.django import modulestore
-from xmodule.modulestore.exceptions import ItemNotFoundError
-from xmodule.x_module import STUDENT_VIEW
+from xmodule.modulestore.django import modulestore  # lint-amnesty, pylint: disable=wrong-import-order
+from xmodule.modulestore.exceptions import ItemNotFoundError  # lint-amnesty, pylint: disable=wrong-import-order
+from xmodule.x_module import STUDENT_VIEW  # lint-amnesty, pylint: disable=wrong-import-order
+from openedx.features.branch.utils import is_system_admin
 
 log = logging.getLogger(__name__)
 
@@ -85,7 +86,6 @@ def get_course(course_id, depth=0):
     depth: The number of levels of children for the modulestore to cache.
     None means infinite depth.  Default is to fetch no children.
     """
-    print('===========>')
     course = modulestore().get_course(course_id, depth=depth)
     if course is None:
         raise CourseRunNotFound(course_key=course_id)
@@ -712,6 +712,7 @@ def get_courses(user, org=None, filter_=None, permissions=None):
     courses = branding.get_visible_courses(
         org=org,
         filter_=filter_,
+        is_system_admin=is_system_admin(user) or user.is_superuser
     ).prefetch_related(
         'modes',
     ).select_related(

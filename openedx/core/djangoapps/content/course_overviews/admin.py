@@ -4,12 +4,12 @@ is used in user dashboard queries and other places where you need info like
 name, and start dates, but don't actually need to crawl into course content.
 """
 
-
+from common.djangoapps.student.models import CourseAccessRole
 from config_models.admin import ConfigurationModelAdmin
 from django.contrib import admin
 
 from .models import CourseOverview, CourseOverviewImageConfig, CourseOverviewImageSet, SimulateCoursePublishConfig
-
+from openedx.features.branch.utils import get_user_branch_id, is_system_admin, is_branch_admin
 
 class CourseOverviewAdmin(admin.ModelAdmin):
     """
@@ -26,6 +26,42 @@ class CourseOverviewAdmin(admin.ModelAdmin):
     ]
 
     search_fields = ['id', 'display_name']
+
+    def get_queryset(self, request):
+        qs = super().get_queryset(request)
+        if request.user.is_superuser or is_system_admin(request.user):
+            return qs
+
+        # Filter here by user branch, so user only see users from the same branch
+        branch_id = get_user_branch_id(request.user)
+        if branch_id:
+            # Return all courses within branch for Branch Admin.
+            if is_branch_admin(request.user):
+                return qs.filter(branch_id=branch_id)
+
+            # Return all own courses for Instructor.
+            course_access_role = CourseAccessRole.objects.filter(user_id=request.user)
+            return qs.filter(id__in=[accessible_course.course_id for accessible_course in course_access_role])
+
+        return qs.none()
+
+    def get_readonly_fields(self, request, obj=None):
+        django_readonly = super().get_readonly_fields(request, obj)
+
+        if not (is_system_admin(request.user) or request.user.is_superuser):
+            return django_readonly + ('branch',)
+        return django_readonly
+
+    def save_model(self, request, obj, form, change):
+        """
+        Newly customized by FinzTrust
+        This is to implicitly link course to the same branch as the creator's.
+        """
+        branch_id = get_user_branch_id(request.user)
+        if branch_id:
+            obj.branch_id = branch_id
+
+        super().save_model(request, obj, form, change)
 
 
 class CourseOverviewImageConfigAdmin(ConfigurationModelAdmin):

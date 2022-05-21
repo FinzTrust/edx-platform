@@ -208,6 +208,9 @@ urlpatterns = [
     path('404', handler404),
     path('429', handler429),
     path('500', handler500),
+
+    # Newly added by FinzTrust
+    path('api/branch', include('openedx.features.branch.urls')),
 ]
 
 if settings.FEATURES.get('ENABLE_MOBILE_REST_API'):

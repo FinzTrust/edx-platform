@@ -46,7 +46,8 @@ from common.djangoapps.student.models import (
     UserTestGroup
 )
 from common.djangoapps.student.roles import REGISTERED_ACCESS_ROLES
-from xmodule.modulestore.django import modulestore
+from xmodule.modulestore.django import modulestore  # lint-amnesty, pylint: disable=wrong-import-order
+from openedx.features.branch.utils import get_user_branch_id, is_system_admin
 
 User = get_user_model()  # pylint:disable=invalid-name
 
@@ -315,6 +316,13 @@ class UserProfileInline(admin.StackedInline):
     can_delete = False
     verbose_name_plural = _('User profile')
 
+    def get_readonly_fields(self, request, obj=None):
+        django_readonly = super().get_readonly_fields(request, obj)
+
+        if not (is_system_admin(request.user) or request.user.is_superuser):
+            return django_readonly + ('branch',)
+        return django_readonly
+
 
 class AccountRecoveryInline(admin.StackedInline):
     """ Inline admin interface for AccountRecovery model. """
@@ -349,15 +357,51 @@ class UserAdmin(BaseUserAdmin):
     inlines = (UserProfileInline, AccountRecoveryInline)
     form = UserChangeForm
 
+    def branch(self, obj):
+        return self.inlines.branch.name_kh
+
+    def get_queryset(self, request):
+        qs = super().get_queryset(request)
+        if request.user.is_superuser or is_system_admin(request.user):
+            return qs
+
+        # Filter here by user branch, so user only see users from the same branch
+        branch_id = get_user_branch_id(request.user)
+        user_profile = UserProfile.objects.filter(branch_id=branch_id).values_list('id')
+        return qs.filter(profile__in=user_profile)
+
     def get_readonly_fields(self, request, obj=None):
         """
         Allows editing the users while skipping the username check, so we can have Unicode username with no problems.
         The username is marked read-only when editing existing users regardless of `ENABLE_UNICODE_USERNAME`, to simplify the bokchoy tests.  # lint-amnesty, pylint: disable=line-too-long
         """
         django_readonly = super().get_readonly_fields(request, obj)
+        admin = [g.name for g in request.user.groups.all() if 'Admin' in g.name]
         if obj:
-            return django_readonly + ('username',)
+            django_readonly += ('username',)
+
+            if not (request.user.is_superuser or admin):
+                django_readonly += ('is_staff',)
+
+            if not request.user.is_superuser:
+                django_readonly += ('is_superuser',)
+
         return django_readonly
+
+    def save_formset(self, request, form, formset, change):
+        """
+        Newly customized by FinzTrust
+        This is to implicitly link user to the same branch as the creator's.
+        """
+        formset.save()
+        for fs in formset.forms:
+            if isinstance(fs.instance, UserProfile):
+                obj = fs.instance
+                default_branch = get_user_branch_id(request.user)
+                if default_branch:
+                    obj.branch_id = default_branch
+
+                obj.save()
 
 
 @admin.register(UserAttribute)
