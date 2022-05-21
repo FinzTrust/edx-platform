@@ -320,6 +320,13 @@ class UserProfileInline(admin.StackedInline):
     can_delete = False
     verbose_name_plural = _('User profile')
 
+    def get_readonly_fields(self, request, obj=None):
+        django_readonly = super().get_readonly_fields(request, obj)
+
+        if not (is_system_admin(request.user) or request.user.is_superuser):
+            return django_readonly + ('branch',)
+        return django_readonly
+
 
 class AccountRecoveryInline(admin.StackedInline):
     """ Inline admin interface for AccountRecovery model. """
@@ -414,6 +421,7 @@ class UserAdmin(BaseUserAdmin):
         The username is marked read-only when editing existing users regardless of `ENABLE_UNICODE_USERNAME`, to simplify the bokchoy tests.  # lint-amnesty, pylint: disable=line-too-long
         """
         django_readonly = super().get_readonly_fields(request, obj)
+        admin = [g.name for g in request.user.groups.all() if 'Admin' in g.name]
         if obj:
             django_readonly += ('username',)
 

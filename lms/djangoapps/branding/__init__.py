@@ -14,7 +14,7 @@ from opaque_keys.edx.keys import CourseKey
 from openedx.core.djangoapps.site_configuration import helpers as configuration_helpers
 
 
-def get_visible_courses(org=None, filter_=None):
+def get_visible_courses(org=None, filter_=None, is_system_admin=False):
     """
     Yield the CourseOverviews that should be visible in this branded
     instance.

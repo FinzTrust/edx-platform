@@ -113,6 +113,7 @@ from .library import (
     user_can_create_library,
     should_redirect_to_library_authoring_mfe
 )
+from openedx.features.branch.utils import get_user_branch, get_user_branch_id, is_branch_admin, is_system_admin
 
 log = logging.getLogger(__name__)
 User = get_user_model()
@@ -572,6 +573,7 @@ def course_listing(request):
     org = request.GET.get('org', '') if optimization_enabled else None
     courses_iter, in_process_course_actions = get_courses_accessible_to_user(request, org)
     user = request.user
+    branch = get_user_branch(user)
     libraries = []
     if not split_library_view_on_dashboard() and LIBRARIES_ENABLED:
         libraries = _accessible_libraries_iter(request.user)
@@ -618,7 +620,8 @@ def course_listing(request):
         'allow_unicode_course_id': settings.FEATURES.get('ALLOW_UNICODE_COURSE_ID', False),
         'allow_course_reruns': settings.FEATURES.get('ALLOW_COURSE_RERUNS', True),
         'optimization_enabled': optimization_enabled,
-        'active_tab': 'courses'
+        'active_tab': 'courses',
+        'branch': branch.__dict__ if branch else {}
     })
 
 
@@ -795,7 +798,12 @@ def get_courses_accessible_to_user(request, org=None):
     """
     if GlobalStaff().has_user(request.user):
         # user has global access so no need to get courses from django groups
-        courses, in_process_course_actions = _accessible_courses_summary_iter(request, org)
+        if request.user.is_superuser or is_system_admin(request.user):
+            courses, in_process_course_actions = _accessible_courses_summary_iter(request, org)
+        elif is_branch_admin(request.user):
+            courses, in_process_course_actions = _accessible_courses_list_from_branch(request)
+        else:
+            courses, in_process_course_actions = _accessible_courses_list_from_groups(request)
     else:
         try:
             courses, in_process_course_actions = _accessible_courses_list_from_groups(request)
