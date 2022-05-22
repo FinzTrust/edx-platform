@@ -205,7 +205,7 @@ class CourseOverview(TimeStampedModel):
             course_overview = cls()
 
         # Newly customized from FinzTrust
-        branch = None #Branch.objects.filter(short_name=course.location.org).first()
+        branch = Branch.objects.filter(short_name=course.location.org).first()
         # End of new code block
 
         course_overview.version = cls.VERSION
