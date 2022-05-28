@@ -66,10 +66,7 @@ from common.djangoapps.util.date_utils import strftime_localized
 from xmodule.modulestore.django import modulestore  # lint-amnesty, pylint: disable=wrong-import-order
 from xmodule.modulestore.exceptions import ItemNotFoundError  # lint-amnesty, pylint: disable=wrong-import-order
 from xmodule.x_module import STUDENT_VIEW  # lint-amnesty, pylint: disable=wrong-import-order
-<<<<<<< HEAD
-=======
 from openedx.features.branch.utils import is_system_admin
->>>>>>> 02f3d08871 (Update)
 
 log = logging.getLogger(__name__)
 
