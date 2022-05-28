@@ -36,7 +36,6 @@ from xmodule.course_module import DEFAULT_START_DATE, CourseBlock  # lint-amnest
 from xmodule.error_module import ErrorBlock  # lint-amnesty, pylint: disable=wrong-import-order
 from xmodule.modulestore.django import modulestore  # lint-amnesty, pylint: disable=wrong-import-order
 from xmodule.tabs import CourseTab  # lint-amnesty, pylint: disable=wrong-import-order
-from openedx.features.branch.models import Branch  # Customized module
 
 log = logging.getLogger(__name__)
 
@@ -166,6 +165,7 @@ class CourseOverview(TimeStampedModel):
         """
         from lms.djangoapps.certificates.api import get_active_web_certificate
         from openedx.core.lib.courses import course_image_url
+        from openedx.features.branch.models import Branch
 
         # Workaround for a problem discovered in https://openedx.atlassian.net/browse/TNL-2806.
         # If the course has a malformed grading policy such that
@@ -202,10 +202,13 @@ class CourseOverview(TimeStampedModel):
             log.info('Creating course overview for %s.', str(course.id))
             course_overview = cls()
 
+        # Newly customized from FinzTrust
+        branch = Branch.objects.filter(short_name=course.location.org).first()
+        # End of new code block
+
         course_overview.version = cls.VERSION
         course_overview.id = course.id
-        # This is for future use, if there are any customization on Studio > Course Creation > Front-End
-        course_overview.branch_id = None    # This is for future if we want to set default branch when user create course in studio
+        course_overview.branch_id = branch.id if branch else None # This is to set default branch when user create course in studio. Newly customized by FinzTrust.
         course_overview._location = course.location  # lint-amnesty, pylint: disable=protected-access
         course_overview.org = course.location.org
         course_overview.display_name = display_name
