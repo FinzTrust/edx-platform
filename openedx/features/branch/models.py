@@ -19,7 +19,7 @@ class Branch(models.Model):
 
     name_kh = models.CharField(max_length=255)
     name_en = models.CharField(max_length=255)
-    short_name = models.CharField(max_length=12)
+    short_name = models.CharField(max_length=12, unique=True)
     contact_person = models.CharField(max_length=255, null=True, blank=True)
     contact_number = models.CharField(max_length=15)
     contact_number_2 = models.CharField(max_length=15, null=True, blank=True)
