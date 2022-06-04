@@ -1,13 +1,13 @@
 from django.conf import settings
 from common.djangoapps.util.cache import cache
-from common.djangoapps.student.models import UserProfile
-from openedx.features.branch.models import Branch
 
 
 def get_user_branch_id(user):
     """
     This is for getting login user branch id.
     """
+    from common.djangoapps.student.models import UserProfile
+
     try:
         if not user.is_authenticated:
             return []
@@ -35,6 +35,9 @@ def get_user_branch(user):
     """
     This is for getting login user branch information.
     """
+    from common.djangoapps.student.models import UserProfile
+    from openedx.features.branch.models import Branch
+
     if not user.is_authenticated:
         return []
 
