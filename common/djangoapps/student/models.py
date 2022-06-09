@@ -12,7 +12,6 @@ file and check it in at the same time as your model changes. To do that,
 """
 
 
-import crum
 import hashlib  # lint-amnesty, pylint: disable=wrong-import-order
 import json  # lint-amnesty, pylint: disable=wrong-import-order
 import logging  # lint-amnesty, pylint: disable=wrong-import-order
@@ -24,6 +23,7 @@ from importlib import import_module  # lint-amnesty, pylint: disable=wrong-impor
 from urllib.parse import urlencode  # lint-amnesty, pylint: disable=wrong-import-order
 import warnings  # lint-amnesty, pylint: disable=wrong-import-order
 
+import crum
 from config_models.models import ConfigurationModel
 from django.apps import apps
 from django.conf import settings
@@ -38,7 +38,6 @@ from django.db.models import Count, Index, Q
 from django.db.models.signals import post_save, pre_save
 from django.db.utils import ProgrammingError
 from django.dispatch import receiver
-
 from django.utils.functional import cached_property
 from django.utils.translation import gettext_lazy as _
 from django.utils.translation import gettext_noop
@@ -66,7 +65,6 @@ from openedx_events.learning.signals import (
     COURSE_ENROLLMENT_CREATED,
     COURSE_UNENROLLMENT_COMPLETED,
 )
-from openedx_filters.learning.filters import CourseEnrollmentStarted
 import openedx.core.djangoapps.django_comment_common.comment_client as cc
 from common.djangoapps.course_modes.models import CourseMode, get_cosmetic_verified_display_price
 from common.djangoapps.student.emails import send_proctoring_requirements_email
@@ -97,7 +95,6 @@ from openedx.core.djangoapps.site_configuration import helpers as configuration_
 from openedx.core.djangoapps.xmodule_django.models import NoneToEmptyManager
 from openedx.core.djangolib.model_mixins import DeletableByUserValue
 from openedx.core.toggles import ENTRANCE_EXAMS
-from openedx.features.branch.models import Branch
 
 log = logging.getLogger(__name__)
 AUDIT_LOG = logging.getLogger("audit")
@@ -1635,12 +1632,6 @@ class CourseEnrollment(models.Model):
 
         Also emits relevant events for analytics purposes.
         """
-        try:
-            user, course_key, mode = CourseEnrollmentStarted.run_filter(
-                user=user, course_key=course_key, mode=mode,
-            )
-        except CourseEnrollmentStarted.PreventEnrollment as exc:
-            raise EnrollmentNotAllowed(str(exc)) from exc
 
         if mode is None:
             mode = _default_course_mode(str(course_key))
