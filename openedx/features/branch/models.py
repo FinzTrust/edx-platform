@@ -3,7 +3,6 @@ Model for Branch
 """
 
 
-from typing_extensions import Required
 from django.db import models
 from django.core.validators import FileExtensionValidator
 
