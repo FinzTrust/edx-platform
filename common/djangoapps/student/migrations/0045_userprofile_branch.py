@@ -8,7 +8,7 @@ class Migration(migrations.Migration):
 
     dependencies = [
         ('branch', '0003_alter_branch_proile_picture'),
-        ('student', '0044_courseenrollmentcelebration_celebrate_weekly_goal'),
+        ('student', '0043_remove_userprofile_allow_certificate'),
     ]
 
     operations = [
