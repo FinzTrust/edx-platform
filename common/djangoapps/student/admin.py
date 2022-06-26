@@ -358,6 +358,7 @@ class UserAdmin(BaseUserAdmin):
     form = UserChangeForm
 
     def branch(self, obj):
+        print('=======>', self.inlines.branch.name_kh)
         return self.inlines.branch.name_kh
 
     def get_queryset(self, request):
@@ -380,9 +381,11 @@ class UserAdmin(BaseUserAdmin):
         if obj:
             django_readonly += ('username',)
 
+            # If not SuperUser, Branch Admin, or System Admin not allow to tick this field
             if not (request.user.is_superuser or admin):
                 django_readonly += ('is_staff',)
 
+            # If not Super User, not allow to tick this field.
             if not request.user.is_superuser:
                 django_readonly += ('is_superuser',)
 
@@ -402,6 +405,15 @@ class UserAdmin(BaseUserAdmin):
                     obj.branch_id = default_branch
 
                 obj.save()
+
+    def get_form(self, request, obj, **kwargs):
+        """
+        Newly customized by FinzTrust
+        This is to override label of field is_staff.
+        """
+        form = super(BaseUserAdmin, self).get_form(request, obj, **kwargs)
+        form.base_fields['is_staff'].label = 'Staff / Client status'
+        return form
 
 
 @admin.register(UserAttribute)
