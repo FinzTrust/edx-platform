@@ -349,6 +349,20 @@ class UserAdmin(BaseUserAdmin):
     inlines = (UserProfileInline, AccountRecoveryInline)
     form = UserChangeForm
 
+    def branch(self, obj):
+        print('=======>', self.inlines.branch.name_kh)
+        return self.inlines.branch.name_kh
+
+    def get_queryset(self, request):
+        qs = super().get_queryset(request)
+        if request.user.is_superuser or is_system_admin(request.user):
+            return qs
+
+        # Filter here by user branch, so user only see users from the same branch
+        branch_id = get_user_branch_id(request.user)
+        user_profile = UserProfile.objects.filter(branch_id=branch_id).values_list('id')
+        return qs.filter(profile__in=user_profile)
+
     def get_readonly_fields(self, request, obj=None):
         """
         Allows editing the users while skipping the username check, so we can have Unicode username with no problems.
@@ -356,8 +370,41 @@ class UserAdmin(BaseUserAdmin):
         """
         django_readonly = super().get_readonly_fields(request, obj)
         if obj:
-            return django_readonly + ('username',)
+            django_readonly += ('username',)
+
+            # If not SuperUser, Branch Admin, or System Admin not allow to tick this field
+            if not (request.user.is_superuser or admin):
+                django_readonly += ('is_staff',)
+
+            # If not Super User, not allow to tick this field.
+            if not request.user.is_superuser:
+                django_readonly += ('is_superuser',)
+
         return django_readonly
+
+    def save_formset(self, request, form, formset, change):
+        """
+        Newly customized by FinzTrust
+        This is to implicitly link user to the same branch as the creator's.
+        """
+        formset.save()
+        for fs in formset.forms:
+            if isinstance(fs.instance, UserProfile):
+                obj = fs.instance
+                default_branch = get_user_branch_id(request.user)
+                if default_branch:
+                    obj.branch_id = default_branch
+
+                obj.save()
+
+    def get_form(self, request, obj, **kwargs):
+        """
+        Newly customized by FinzTrust
+        This is to override label of field is_staff.
+        """
+        form = super(BaseUserAdmin, self).get_form(request, obj, **kwargs)
+        form.base_fields['is_staff'].label = 'Staff / Client status'
+        return form
 
 
 @admin.register(UserAttribute)
