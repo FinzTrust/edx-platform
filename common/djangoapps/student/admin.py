@@ -375,7 +375,7 @@ class UserAdmin(BaseUserAdmin):
 
     # Newly customized by FinzTrust
     list_display = ('username', 'email', 'first_name', 'last_name', 'staff')
-    custom_list_display = ('branch')
+    custom_list_display = ('branch',)
     custom_list_filter = (BranchFilter,)
     custom_search_fields = ('profile__branch__name_en',)
 
