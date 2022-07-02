@@ -458,7 +458,7 @@ class UserAdmin(BaseUserAdmin):
         This is to add column Branch to display in user list.
         """
         # If not SuperUser or System Admin not allow to see this column
-        if not (request.user.is_superuser or is_system_admin(request.user)):
+        if request.user.is_superuser or is_system_admin(request.user):
             return super().get_list_display(request) + self.custom_list_display
 
         return super().get_list_display(request)
@@ -469,7 +469,7 @@ class UserAdmin(BaseUserAdmin):
         This is to make column Branch filter-able.
         """
         # If not SuperUser or System Admin not allow to see this filter
-        if not (request.user.is_superuser or is_system_admin(request.user)):
+        if request.user.is_superuser or is_system_admin(request.user):
             return super().get_list_filter(request) + self.custom_list_filter
 
         return super().get_list_filter(request)
@@ -480,7 +480,7 @@ class UserAdmin(BaseUserAdmin):
         This is to make column Branch searchable in user search bar.
         """
         # If not SuperUser or System Admin not allow to search user by Branch
-        if not (request.user.is_superuser or is_system_admin(request.user)):
+        if request.user.is_superuser or is_system_admin(request.user):
             return super().get_search_fields(request) + self.custom_search_fields
 
         return super().get_search_fields(request)
