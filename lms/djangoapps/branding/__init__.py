@@ -32,6 +32,8 @@ def get_visible_courses(org=None, filter_=None, is_system_admin=False):
 
     courses = CourseOverview.objects.none()
 
+    return courses
+
     if org:
         # Check the current site's orgs to make sure the org's courses should be displayed
         if not current_site_orgs or org in current_site_orgs:
