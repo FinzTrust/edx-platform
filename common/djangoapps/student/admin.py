@@ -47,6 +47,10 @@ from common.djangoapps.student.models import (
 )
 from common.djangoapps.student.roles import REGISTERED_ACCESS_ROLES
 from xmodule.modulestore.django import modulestore  # lint-amnesty, pylint: disable=wrong-import-order
+from openedx.features.branch.utils import get_user_branch_id, is_system_admin
+from openedx.features.branch.models import Branch
+from django.db.models import F
+from django.contrib.admin import SimpleListFilter
 
 User = get_user_model()  # pylint:disable=invalid-name
 
@@ -344,20 +348,60 @@ class UserChangeForm(BaseUserChangeForm):
             )
 
 
+class BranchFilter(SimpleListFilter):
+    title = 'branch' # or use _('country') for translated title
+    parameter_name = 'branch'
+
+    def lookups(self, request, model_admin):
+        return [(b.id, b.name_en) for b in Branch.objects.all()]
+
+    def queryset(self, request, queryset):
+        if self.value():
+            user_profile = UserProfile.objects.filter(branch__id__exact=self.value())
+            return queryset.filter(profile__in=user_profile)
+
+
 class UserAdmin(BaseUserAdmin):
     """ Admin interface for the User model. """
     inlines = (UserProfileInline, AccountRecoveryInline)
     form = UserChangeForm
 
+    # Newly customized by FinzTrust
+    list_display = ('username', 'email', 'first_name', 'last_name', 'staff')
+    custom_list_display = ('branch')
+    custom_list_filter = (BranchFilter,)
+    custom_search_fields = ('profile__branch__name_en',)
+
     def branch(self, obj):
-        print('=======>', self.inlines.branch.name_kh)
-        return self.inlines.branch.name_kh
+        """
+        Newly customized by FinzTrust
+        This is to attach column Branch in user list.
+        """
+        result = UserProfile.objects\
+            .select_related('branch')\
+            .annotate(branch_name=F('branch__name_en'))\
+            .filter(user=obj)\
+            .values('branch_name')\
+            .first()
+
+        return result.get('branch_name') if result else ''
+
+    def staff(self, obj):
+        """
+        Newly customized by FinzTrust
+        This is to override is_staff label on user list header from 'STAFF STATUS' => 'STAFF / CLIENT STATUS'
+        """
+        return obj.is_staff
+
+    staff.short_description = "STAFF / CLIENT STATUS"
+    staff.boolean = True
 
     def get_queryset(self, request):
         qs = super().get_queryset(request)
         if request.user.is_superuser or is_system_admin(request.user):
             return qs
 
+        # Newly customized by FinzTrust
         # Filter here by user branch, so user only see users from the same branch
         branch_id = get_user_branch_id(request.user)
         user_profile = UserProfile.objects.filter(branch_id=branch_id).values_list('id')
@@ -372,10 +416,12 @@ class UserAdmin(BaseUserAdmin):
         if obj:
             django_readonly += ('username',)
 
+            # Newly customized by FinzTrust
             # If not SuperUser, Branch Admin, or System Admin not allow to tick this field
             if not (request.user.is_superuser or admin):
                 django_readonly += ('is_staff',)
 
+            # Newly customized by FinzTrust
             # If not Super User, not allow to tick this field.
             if not request.user.is_superuser:
                 django_readonly += ('is_superuser',)
@@ -405,6 +451,39 @@ class UserAdmin(BaseUserAdmin):
         form = super(BaseUserAdmin, self).get_form(request, obj, **kwargs)
         form.base_fields['is_staff'].label = 'Staff / Client status'
         return form
+
+    def get_list_display(self, request):
+        """
+        Newly customized by FinzTrust
+        This is to add column Branch to display in user list.
+        """
+        # If not SuperUser or System Admin not allow to see this column
+        if not (request.user.is_superuser or is_system_admin(request.user)):
+            return super().get_list_display(request) + self.custom_list_display
+
+        return super().get_list_display(request)
+
+    def get_list_filter(self, request):
+        """
+        Newly customized by FinzTrust
+        This is to make column Branch filter-able.
+        """
+        # If not SuperUser or System Admin not allow to see this filter
+        if not (request.user.is_superuser or is_system_admin(request.user)):
+            return super().get_list_filter(request) + self.custom_list_filter
+
+        return super().get_list_filter(request)
+
+    def get_search_fields(self, request):
+        """
+        Newly customized by FinzTrust
+        This is to make column Branch searchable in user search bar.
+        """
+        # If not SuperUser or System Admin not allow to search user by Branch
+        if not (request.user.is_superuser or is_system_admin(request.user)):
+            return super().get_search_fields(request) + self.custom_search_fields
+
+        return super().get_search_fields(request)
 
 
 @admin.register(UserAttribute)
