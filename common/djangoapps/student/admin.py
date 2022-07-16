@@ -1,6 +1,7 @@
 """ Django admin pages for student app """
 
 
+from email.policy import default
 from functools import wraps
 
 from config_models.admin import ConfigurationModelAdmin
@@ -12,7 +13,7 @@ from django.contrib.admin.utils import unquote
 from django.contrib.auth import get_user_model
 from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
 from django.contrib.auth.forms import ReadOnlyPasswordHashField
-from django.contrib.auth.forms import UserChangeForm as BaseUserChangeForm
+from django.contrib.auth.forms import UserChangeForm as BaseUserChangeForm, UserCreationForm
 from django.db import models, router, transaction
 from django.http import HttpResponseRedirect
 from django.http.request import QueryDict
@@ -433,7 +434,13 @@ class UserAdmin(BaseUserAdmin):
         Newly customized by FinzTrust
         This is to implicitly link user to the same branch as the creator's.
         """
+
         formset.save()
+
+        # Do not update user profile when user is newly created
+        if 'user/add' in request.build_absolute_uri():
+            return
+
         for fs in formset.forms:
             if isinstance(fs.instance, UserProfile):
                 obj = fs.instance
@@ -448,6 +455,9 @@ class UserAdmin(BaseUserAdmin):
         Newly customized by FinzTrust
         This is to override label of field is_staff.
         """
+        if 'user/add' in request.build_absolute_uri():
+            return super().get_form(request, obj, **kwargs)
+
         form = super(BaseUserAdmin, self).get_form(request, obj, **kwargs)
         form.base_fields['is_staff'].label = 'Staff / Client status'
         return form
