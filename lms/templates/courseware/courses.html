@@ -5,8 +5,11 @@
   from openedx.core.djangolib.js_utils import js_escaped_string, dump_js_escaped_json
 %>
 <%inherit file="../main.html" />
+
+<# course_discovery_enabled = settings.FEATURES.get('ENABLE_COURSE_DISCOVERY') #>
+
 <%
-  course_discovery_enabled = settings.FEATURES.get('ENABLE_COURSE_DISCOVERY')
+  course_discovery_enabled = False
 %>
 
 <%namespace name='static' file='../static_content.html'/>
