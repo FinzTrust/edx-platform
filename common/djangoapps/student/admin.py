@@ -445,7 +445,7 @@ class UserAdmin(BaseUserAdmin):
             if isinstance(fs.instance, UserProfile):
                 obj = fs.instance
                 default_branch = get_user_branch_id(request.user)
-                if default_branch:
+                if default_branch and not request.user.is_superuser:
                     obj.branch_id = default_branch
 
                 obj.save()
