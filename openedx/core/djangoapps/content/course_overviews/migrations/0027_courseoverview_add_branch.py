@@ -8,7 +8,7 @@ class Migration(migrations.Migration):
 
     dependencies = [
         ('branch', '0004_rename_proile_picture_branch_logo'),
-        ('course_overviews', '0025_auto_20210702_1602'),
+        ('course_overviews', '0026_courseoverview_entrance_exam'),
     ]
 
     operations = [
